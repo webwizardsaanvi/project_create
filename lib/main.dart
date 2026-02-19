@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 void main() {
@@ -30,7 +32,12 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      //home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: AuthPage(),
+      routes: {
+        '/home': (context) => const MyHomePage(title: 'project-create'),
+        '/auth': (context) => const AuthPage(),
+      },
     );
   }
 }
@@ -116,6 +123,76 @@ class _MyHomePageState extends State<MyHomePage> {
         onPressed: _incrementCounter,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class AuthPage extends StatefulWidget {
+  const AuthPage({super.key});
+
+  @override
+  State<AuthPage> createState() => AuthPageState();
+}
+
+class AuthPageState extends State<AuthPage> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool isLogin = true;
+
+Future<void> _authenticate() async {
+  try {
+    if (isLogin) {
+      //let's login!
+      final response = await SupabaseClientInstance.client.auth.signInWithPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+
+      if(!mounted) return;
+
+      if(response.session != null){
+        Navigator.pushReplacementNamed(context, '/home');
+        //yay the login worked!
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Log in failed')),);
+        //log in error
+      } else{
+        final response = await SupabaseClientInstance.client.auth.signUp(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+        if(!mounted) return;
+
+        if(response.session != null){
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Registration successful!')),
+          ); 
+          Navigator.pushReplacementNamed(context, '/complete-profile'); //create a complete profile section pls!
+          //yay the registration worked!
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Registration failed: ${response.user}')),
+          //registration error
+          );
+        }
+      }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+        );
+      }
+      }
+
+
+    } 
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        color: Colors.red,
       ),
     );
   }
