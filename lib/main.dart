@@ -1,8 +1,14 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/ai_service.dart';
 
-void main() {
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(
+    url: 'https://bmfbophytctnbtozomka.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtZmJvcGh5dGN0bmJ0b3pvbWthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMjExNTIsImV4cCI6MjA4Nzg5NzE1Mn0.C3rik1xrBtnIUQwqLH_R4EkV7eBauIF19-_7gUiKDGw',
+  );
   runApp(const MyApp());
 }
 
@@ -128,6 +134,19 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
+Future<void> 
+
+//the suggest project page:
+class SuggestPage extends StatefulWidget {
+  const SuggestPage({super.key});
+  @override
+  State<SuggestPage> createState() => SuggestPageState();
+}
+
+class SuggestPageState extends State<AuthPage>{
+
+}
+/*
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
 
@@ -187,7 +206,7 @@ Future<void> _authenticate() async {
 
 
     } 
-
+*/
   @override
   Widget build(BuildContext context) {
     return Scaffold(
