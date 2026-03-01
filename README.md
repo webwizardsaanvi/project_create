@@ -1,16 +1,5 @@
 # project_create
 
-A new Flutter project.
+This project aims to provide students with personalized supplementary projects based on the current topics being taught in their courses. These projects will allow students to further understand the real-world applications of the concepts learned in classes, as well as understand how ideas from their different courses connect to one another.
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Let's get started! (o≧∇≦)o
