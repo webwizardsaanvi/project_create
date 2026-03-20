@@ -134,19 +134,89 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-Future<void> 
-
-//the suggest project page:
-class SuggestPage extends StatefulWidget {
-  const SuggestPage({super.key});
+class suggestpage extends StatefulWidget{
+  const suggestpage({super.key});
   @override
-  State<SuggestPage> createState() => SuggestPageState();
+  State<suggestpage> createState() => _suggestpagestate();
+} 
+class _Message{
+  final String content;
+  final bool isUser;
+  projectsuggest({required this.content, required this.isUser});
+}
+class _suggestpagestate extends State<suggestpage> {
+  final TextEditingController _controller = TextEditingController();
+  final List<_Message> _messages = [];
+
+  bool _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_apiKey.isEmpty && _messages.isEmpty) {
+      _messages.add(_Message(
+          content: '⚠️ Error: API_KEY is not set or defaulted. Please check configuration.',
+          isUser: false));
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Dewey')),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: _messages.length,
+              key: ValueKey(_messages.length), 
+              itemBuilder: (context, index) {
+                final message = _messages[index];
+                return Align(
+                  alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: message.isUser ? Colors.blue : Colors.grey,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      message.content,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: const InputDecoration(
+                      hintText: 'Ask Dewey...',
+                      border: OutlineInputBorder(),
+                    ),
+                    onSubmitted: _isLoading || _apiKey.isEmpty ? null : _sendMessage, 
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: _isLoading || _apiKey.isEmpty ? null : () => _sendMessage(_controller.text),
+                  child: _isLoading 
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                      : const Text('Send'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class SuggestPageState extends State<AuthPage>{
 
-}
-/*
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
 
@@ -155,7 +225,7 @@ class AuthPage extends StatefulWidget {
 }
 
 class AuthPageState extends State<AuthPage> {
-  final _emailController = TextEditingController();
+  /*final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool isLogin = true;
 
