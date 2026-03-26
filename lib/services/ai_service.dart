@@ -1,9 +1,16 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:google_generative_ai/google_generative_ai.dart';
+
+// 1. Define the model once
+final _model = GenerativeModel(
+  model: 'gemini-2.5-flash', // Use 1.5, not 2.5
+  apiKey: 'AIzaSyCv7bdqLvCTTe6pCqfwNfJ7Jh6m7dtUttc', // Your key
+);
 
 Future<String> askAI(String userInput) async {
+  // 2. Your specific course data
   final data = [
-  {
+    {
     "course_code": "1010",
     "categories": [
       "Intro to ECSE",
@@ -508,28 +515,25 @@ Future<String> askAI(String userInput) async {
   }
   ];
 
-  final response = await http.post(
-    Uri.parse("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=AIzaSyCV9XPKYPOT-bfEWsAVfXlCZh5rTd_Hdic"),
-    headers: {"Content-Type": "application/json"},
-    body: jsonEncode({
-      "contents": [
-        {
-          "parts": [
-            {
-              "text": """
-You are an assistant. Use this dataset to answer:
+  // API Key - Use the same one from your dart-define or hardcode for testing
+  //const String apiKey = "AIzaSyCV9XPKYPOT-bfEWsAVfXlCZh5rTd_Hdic"; 
+  //const String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey";
 
-$data
+try {
+    // 3. Talk to Gemini directly from the app
+    final content = [
+      Content.text('''
+        You are Luxi, a project advisor. 
+        Use this course data: ${jsonEncode(data)}
+        
+        User Request: $userInput
+      ''')
+    ];
 
-User question: $userInput
-"""
-            }
-          ]
-        }
-      ]
-    }),
-  );
-
-  final decoded = jsonDecode(response.body);
-  return decoded["candidates"][0]["content"]["parts"][0]["text"];
+    final response = await _model.generateContent(content);
+    return response.text ?? "I couldn't come up with anything.";
+    
+  } catch (e) {
+    return "AI Error: $e";
+  }
 }
