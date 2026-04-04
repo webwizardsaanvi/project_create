@@ -4,7 +4,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 // 1. Define the model once
 final _model = GenerativeModel(
   model: 'gemini-2.5-flash', // Use 1.5, not 2.5
-  apiKey: 'AIzaSyCv7bdqLvCTTe6pCqfwNfJ7Jh6m7dtUttc', // Your key
+  apiKey: '-o', // Your key
 );
 
 Future<String> askAI(String userInput) async {

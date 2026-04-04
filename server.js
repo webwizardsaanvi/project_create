@@ -12,7 +12,7 @@ app.use(express.json());
 
 app.post("/askAI", async (req, res) => {
   const { userInput, data } = req.body;
-  const apiKey = "AIzaSyCv7bdqLvCTTe6pCqfwNfJ7Jh6m7dtUttc"; // Hide this in .env later!
+  const apiKey = "-o"; // Hide this in .env later!
 
   try {
     const response = await fetch(
