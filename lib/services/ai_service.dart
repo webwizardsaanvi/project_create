@@ -1,11 +1,10 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
 
-// 1. Define the model once
 final _model = GenerativeModel(
   model: 'gemini-2.5-flash', // Use 1.5, not 2.5
   apiKey: '', // Your key
   generationConfig: GenerationConfig(
-  maxOutputTokens: 20000, // PLEASE do this
+  maxOutputTokens: 20000,
 ),
 );
 
@@ -525,7 +524,7 @@ Future<String> askAI(String userInput, List<String> userinputcourses) async {
     return '$code: $categories';
   }).join('\n\n');
 
-  // Combine with user prompt if needed
+
   final finalPrompt = '$userInput\n\nRelevant Courses:\n$coursesText';
 
   try {
@@ -539,42 +538,3 @@ Future<String> askAI(String userInput, List<String> userinputcourses) async {
     return 'Error generating response: $e';
   }
 }
-/*
-  List<String> shorteneddata = [];
-  for(var course in userinputcourses){
-    if(data.any((element) => element['course_code'] == course)){
-      var courseData = data.firstWhere((element) => element['course_code'] == course);
-      final categories = courseData['categories'] as List?;
-      if(categories != null && categories.isNotEmpty) {
-        shorteneddata.add(categories[0]);
-      }
-    }
-  }
-  // API Key - Use the same one from your dart-define or hardcode for testing
-  //const String apiKey = "AIzaSyCV9XPKYPOT-bfEWsAVfXlCZh5rTd_Hdic"; 
-  //const String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey";
-
-try {
-    // 3. Talk to Gemini directly from the app
-    final content = [
-      Content.text('''
-        You are Luxi, a project advisor. 
-        Use this course data: ${jsonEncode(shorteneddata)}
-        
-        User Request: $userInput
-      ''')
-    ];
-      final response = await _model.generateText(
-    prompt: content,
-    temperature: 0.7,
-    maxOutputTokens: 2000,
-  );
-  return response.outputText;
-
-    //final response = await _model.generateContent(content);
-    //return response.text ?? "I couldn't come up with anything.";
-    
-  } catch (e) {
-    return "AI Error: $e";
-  }
-}*/
