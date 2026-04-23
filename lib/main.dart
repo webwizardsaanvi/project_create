@@ -33,7 +33,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// ... (keep the imports, MyApp, Project, SectionLine, AuthPage the same)
 
 final List<Orb> orbs = List.generate(23, (_) => Orb());
 
@@ -173,7 +172,6 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
     );
   }
 }
-// Orb class and BubbleMode stay exactly the same as before
 enum BubbleMode { idle, falling, waiting, rising }
 
 class SectionLine {
@@ -353,7 +351,6 @@ Future<void> _getSuggestion() async {
 
   try {
     print("trying ai yay");
-    // 🟢 CALL 1: FAST OUTLINE ONLY
     final outline = await askAI(
       """
 You are an expert beginner-friendly engineering tutor.
@@ -373,7 +370,6 @@ Return ONLY:
     _appendText(outline);
     _appendText("\n\nExpanding steps...");
 
-    // 🟡 IMPORTANT: DO NOT BLOCK UI OR DOUBLE COUNT QUOTA
     Future.microtask(() async {
       try {
         final expanded = await askAI(
