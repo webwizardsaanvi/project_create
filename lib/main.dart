@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/ai_service.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'dart:async';
 import 'dart:math';
 
@@ -180,8 +181,9 @@ class SectionLine {
   final bool isBullet;
   final bool isNumbered;
   final bool isCheckbox;
+  bool isChecked;
 
-  SectionLine(this.text, {this.isBullet = false, this.isNumbered = false, this.isCheckbox = false});
+  SectionLine(this.text, {this.isBullet = false, this.isNumbered = false, this.isCheckbox = false, this.isChecked = false});
 }
 
 class Orb {
@@ -251,13 +253,15 @@ class SuggestPage extends StatefulWidget {
 class _SuggestPageState extends State<SuggestPage> with SingleTickerProviderStateMixin {
   final List<String> fixedCourses = ["ENGR2350", "ECSE2610", "ECSE2500"];
   final List<Project> savedProjects = [];
-  
+   String? _outline;
+  final int _currentStepIndex = 1;
   bool _isLoading = true;
+  bool _hasLoaded = false;
   late AnimationController _revealController;
   late Animation<double> _revealAnimation;
 
   late Timer _orbTimer;
-
+  
   @override
   void initState() {
     super.initState();
@@ -274,7 +278,10 @@ class _SuggestPageState extends State<SuggestPage> with SingleTickerProviderStat
       if (mounted) setState(() => orbs.forEach((o) => o.move()));
     });
 
-    _getSuggestion();
+    if (!_hasLoaded) {
+      _hasLoaded = true;
+      _getSuggestion();
+    }
   }
 
   @override
@@ -293,14 +300,14 @@ class _SuggestPageState extends State<SuggestPage> with SingleTickerProviderStat
       line = line.trim();
       if (line.isEmpty) continue;
 
-      if (RegExp(r'^(Materials|Instructions|Learning Outcomes)', caseSensitive: false).hasMatch(line)) {
+      if (RegExp(r'^(Materials|Steps|Instructions|Learning Outcomes)', caseSensitive: false).hasMatch(line)) {
         currentSection = line.replaceAll(':', '').trim();
         sections[currentSection] = [];
         continue;
       }
 
       if (currentSection.isEmpty) continue;
-
+      bool isStep = line.toLowerCase().startsWith("step");
       bool isBullet = line.startsWith('- ');
       bool isNumbered = RegExp(r'^\d+\.').hasMatch(line);
       bool isCheckbox = line.startsWith('[ ]') || line.startsWith('[x]');
@@ -316,100 +323,106 @@ class _SuggestPageState extends State<SuggestPage> with SingleTickerProviderStat
     }
     return sections;
   }
+void _appendText(String newText) {
+  if (!mounted) return;
 
+  setState(() {
+    if (savedProjects.isEmpty) {
+      savedProjects.add(Project(
+        title: "Generating...",
+        description: newText,
+      ));
+    } else {
+      final current = savedProjects[0];
+
+      savedProjects[0] = Project(
+        title: current.title,
+        description: "${current.description}\n\n$newText",
+      );
+    }
+  });
+}
 Future<void> _getSuggestion() async {
-  String aiResponse = 'Loading...';  // temporary placeholder
+  if (!mounted) return;
+
+  setState(() {
+    _isLoading = true;
+    savedProjects.clear();
+    savedProjects.add(Project(title: "Generating...", description: ""));
+  });
 
   try {
-    print("=== Starting AI call ===");  // debug log
+    print("trying ai yay");
+    // 🟢 CALL 1: FAST OUTLINE ONLY
+    final outline = await askAI(
+      """
+You are an expert beginner-friendly engineering tutor.
 
-aiResponse = await askAI(
-  "Suggest a beginner-friendly project based on these courses: ${fixedCourses.join(', ')}.\n\n"
+Create a project based on:
+${fixedCourses.join(", ")}
 
-  "Write a FULL step-by-step tutorial for a COMPLETE beginner.\n"
-  "The tutorial must be EXTREMELY detailed and impossible to misunderstand.\n\n"
+Return ONLY:
+- Title
+- Overview
+- Materials
+- Numbered step titles (NO explanations)
+""",
+      fixedCourses,
+    );
 
-  "FORMAT:\n\n"
+    _appendText(outline);
+    _appendText("\n\nExpanding steps...");
 
-  "Title:\n"
-  "Short project name\n\n"
+    // 🟡 IMPORTANT: DO NOT BLOCK UI OR DOUBLE COUNT QUOTA
+    Future.microtask(() async {
+      try {
+        final expanded = await askAI(
+          """
+You are continuing this project:
 
-  "Overview:\n"
-  "2-3 sentences explaining what the project does\n\n"
+$outline
 
-  "Materials:\n"
-  "- exact components with values\n\n"
+Expand ALL steps in detail.
+Return ONLY valid Markdown.
 
-  "Steps:\n\n"
+Rules:
+- one action per step
+- include wiring/code if needed
+- beginner friendly
+- no repetition
+- Use # for title
+- Use ## for sections
+- Use bullet lists with -
+- Use numbered steps with 1., 2., 3.
+- No plain paragraphs unless under a heading
+- No extra commentary
+""",
+          fixedCourses,
+        );
 
-  "CRITICAL RULES FOR STEPS:\n"
-  "- Each step must contain ONLY ONE action\n"
-  "- If a step contains multiple actions, split it into multiple steps\n"
-  "- Do NOT summarize\n"
-  "- Do NOT skip physical actions\n"
-  "- Do NOT assume prior knowledge\n\n"
+        if (mounted) {
+          _appendText("\n\n$expanded");
+        }
+      } catch (e) {
+        if (mounted) {
+          _appendText("\n\n⚠️ Expansion failed: $e");
+        }
+      }
+    });
 
-  "FOR EACH STEP USE THIS FORMAT:\n\n"
-
-  "Step X: [Very specific action]\n"
-  "Goal: What this step achieves\n\n"
-
-  "Instructions:\n"
-  "- Describe EXACTLY what to click, type, or connect\n"
-  "- Include exact pin numbers, menu names, and values\n"
-  "- Write as if the user has never used this tool before\n\n"
-
-  "Why this matters:\n"
-  "- Explain simply\n\n"
-
-  "Common mistake:\n"
-  "- One realistic beginner mistake\n\n"
-
-  "MANDATORY EXPANSION RULE:\n"
-  "If any instruction could be considered vague (examples: 'open IDE', 'write code', 'connect sensor'), you MUST expand it into multiple detailed steps.\n\n"
-
-  "EXAMPLE OF REQUIRED DETAIL:\n"
-  "Instead of: 'Open Arduino IDE'\n"
-  "Write:\n"
-  "- Click the Start menu\n"
-  "- Type 'Arduino IDE'\n"
-  "- Click the application\n\n"
-
-  "Code:\n"
-  "- Introduce code step-by-step\n"
-  "- Explain EVERY line in plain language\n"
-  "- Do NOT dump full code without explanation\n\n"
-
-  "Learning Outcomes:\n"
-  "- What the user learned\n\n"
-
-  "FINAL RULE:\n"
-  "Assume the user will fail if you are not specific enough. Prevent that.\n"
-, fixedCourses
-);
-
-    print("AI call succeeded. Response length: ${aiResponse.length}");
-    
-  } catch (e, stack) {
-    print("=== AI ERROR CAUGHT ===");
-    print("Error: $e");
-    print("Stack trace: $stack");
-    aiResponse = "Error generating suggestion:\n\n$e";
+  } catch (e) {
+    if (mounted) {
+      _appendText("\n\nError: $e");
+    }
   }
-  print(aiResponse);
-
-  // Small delay for orbs
-  await Future.delayed(const Duration(milliseconds: 400));
 
   if (mounted) {
     setState(() {
-      savedProjects.clear();
-      savedProjects.add(Project(title: "Project Idea", description: aiResponse));
       _isLoading = false;
     });
-
-    _revealController.forward();
   }
+
+  _revealController.forward();
 }
   @override
   Widget build(BuildContext context) {
@@ -440,36 +453,29 @@ aiResponse = await askAI(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         child: Padding(
                           padding: const EdgeInsets.all(18),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: ListView(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            //crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               SelectableText(project.title,
                                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 16),
-                              ...parsed.entries.expand((entry) => [
-                                    SelectableText(entry.key,
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                                    const SizedBox(height: 8),
-                                    ...entry.value.map((line) {
-                                      String displayText = line.text;
-
-                                      if (line.isCheckbox) {
-                                        displayText = "☐ ${line.text.replaceAll('[ ]', '').trim()}";
-                                      } else if (line.isBullet) {
-                                        displayText = "• ${line.text.replaceFirst('- ', '')}";
-                                      }
-
-                                      return Padding(
-                                        padding: EdgeInsets.only(
-                                          left: line.isNumbered ? 20 : 0,
-                                          bottom: 8,
-                                        ),
-                                        child: SelectableText(displayText,
-                                            style: const TextStyle(height: 1.65)),
-                                      );
-                                    }),
-                                    const SizedBox(height: 10),
-                                  ]),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  MarkdownBody(
+                                    data: project.description,
+                                    selectable: true,
+                                    styleSheet: MarkdownStyleSheet(
+                                      h1: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                                      h2: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                                      p: const TextStyle(height: 1.5),
+                                      listBullet: const TextStyle(fontSize: 16),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),

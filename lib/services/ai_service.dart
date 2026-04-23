@@ -1,10 +1,9 @@
-import 'dart:convert';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 // 1. Define the model once
 final _model = GenerativeModel(
   model: 'gemini-2.5-flash', // Use 1.5, not 2.5
-  apiKey: 'AIzaSyDj-xyWqVORFEj37poIs6fcoHOlKEUmKG0', // Your key
+  apiKey: '', // Your key
   generationConfig: GenerationConfig(
   maxOutputTokens: 20000, // PLEASE do this
 ),

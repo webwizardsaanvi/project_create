@@ -3,40 +3,44 @@ import fetch from "node-fetch";
 import cors from "cors";
 
 const app = express();
-app.use(cors({
-  origin: '*', 
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+
+app.use(cors());
 app.use(express.json());
 
+const API_KEY = process.env.GEMINI_API_KEY;
+
 app.post("/askAI", async (req, res) => {
-  const { userInput, data } = req.body;
-  const apiKey = "AIzaSyDj-xyWqVORFEj37poIs6fcoHOlKEUmKG0"; // Hide this in .env later!
+  const { prompt } = req.body;
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `You are Dewey, a helpful project advisor. 
-                     Use this database to suggest 3 projects: ${JSON.stringify(data)} 
-                     User question: ${userInput}`
-            }]
-          }]
-        }),
+  contents: [{
+    parts: [{
+      text: `You are Luxi, a helpful project advisor.
+Use this database to suggest projects: ${JSON.stringify(data || [])}
+User question: ${userInput}`
+    }]
+  }]
+}),
       }
     );
 
-    const aiData = await response.json();
-    res.json(aiData); 
+    const data = await response.json();
+
+    const text =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
+
+    res.json({ text });
   } catch (e) {
     res.status(500).json({ error: e.toString() });
   }
 });
 
-app.listen(3000, () => console.log("Dewey Backend running on port 3000"));
+app.listen(3000, () =>
+  console.log("Luxi backend running on port 3000")
+);
